@@ -31,53 +31,63 @@ router.post("/users", async (req, res) => {
 });
 // login user
 
-const loginUser = async(req, res) => {
-    try {
-     const {email, password} =  req.body
- 
-      if(!email, !password){
-        return res.status(400).json({message: "All fields are required"})
-      }
-       const findUser = await User.findOne({email})
- 
-       if(!findUser){
-         return res.status(404).json({message: "User not found"})
-       }
-      
-        const comparePassword = await bcrypt.compare(password,findUser.password)
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-        if(!comparePassword){
-         return res.status(400).json({message: "Invalid password", error: true, success: false})
-        }
-         const acessToken = await generateToken(findUser._id)
- 
-         const cookiesOption = {
-           httpOnly : true,
-           secure : true,
-           sameSite : "None"
-       }
-      
-       res.cookie("token",acessToken, cookiesOption)
-       return res.status(200).json({
-         message:"User Login Successfully",
-         sucess:true,
-         error:false,
-         data:{
-           findUser,
-           acessToken,
-         }
-       })
-     
-    } catch (error) {
-     return res.status(400).json({
-       message:"Login Failed",
-       sucess:false,
-       error:true
-     })
-     
+    // Validate inputs
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required", success: false });
     }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found", success: false });
+    }
+
+    // Compare password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid password", success: false });
+    }
+
+    // Generate JWT Token
+    const accessToken = await generateToken(user._id);
+
+    // Set cookie options for security
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    };
+
+    res.cookie("token", accessToken, cookieOptions);
+
+    return res.status(200).json({
+      message: "User login successful",
+      success: true,
+      data: {
+        user,
+        accessToken,
+      },
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
+    return res.status(500).json({ message: "Login failed", success: false, error: error.message });
   }
- 
+});
+
+// Get all users
+router.get("/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.status(200).json({ success: true, users });
+  } catch (error) {
+    console.error("Get Users Error:", error);
+    res.status(500).json({ message: "Internal server error", success: false, error: error.message });
+  }
+});
 
 
 

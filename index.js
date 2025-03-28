@@ -10,8 +10,10 @@ const app = express();
 
 // Enable CORS
 app.use(cors({
+  
+  origin: 'http://localhost:5174',
   credentials : true,
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  allowedHeaders: ['Content-Type', 'Authorization'], 
 }));
 
 app.use(express.json());
